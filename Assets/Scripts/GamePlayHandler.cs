@@ -11,6 +11,7 @@ public class GamePlayHandler : MonoBehaviour
     private void Awake()
     {
         Map = new Map(4, 4);
+        FindObjectOfType<BlockVisualHandle>().Setup(Map.Grid);
     }
 
     private void Update()
@@ -38,6 +39,11 @@ public class GamePlayHandler : MonoBehaviour
         if (IsDownMove())
         {
             Map.Move(Map.MoveDirection.Down);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            Map.Undo();
         }
     }
 }

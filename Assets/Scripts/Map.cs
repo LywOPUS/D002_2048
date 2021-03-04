@@ -1,7 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using AlderaminUtils;
 using DefaultNamespace;
 using UnityEngine;
@@ -12,12 +9,12 @@ using Random = UnityEngine.Random;
 //  [(0,0),(1,0)]
 public class Map
 {
-    private Grid2D<MapNode> _grid2D;
     private int _mapHeight;
     private int _mapWidth;
     private MapNode.NodeType EmptyType = MapNode.NodeType.Empty;
-    private Queue<MapNode.NodeType[,]> mapHistoryBuffer;
+    private Stack<MapNode.NodeType[,]> mapHistoryBuffer;
     private readonly int _mapSize;
+    public Grid2D<MapNode> Grid { get; }
 
     public enum MoveDirection
     {
@@ -32,9 +29,9 @@ public class Map
         _mapHeight = mapHeight;
         _mapWidth = mapWidth;
         _mapSize = mapHeight * mapWidth;
-        _grid2D = new Grid2D<MapNode>(mapWidth, mapHeight, 10, new Vector3(-20, -20, 0),
-            (grid2D, x, y) => new MapNode(grid2D, x, y), true);
-
+        Grid = new Grid2D<MapNode>(mapWidth, mapHeight, 10, new Vector3(-20, -20, 0),
+            (grid2D, x, y) => new MapNode(grid2D, x, y), false);
+        mapHistoryBuffer = new Stack<MapNode.NodeType[,]>(); 
         #region 设置地图元素
 
         //TODO:正常情况取消注释 
@@ -57,6 +54,9 @@ public class Map
         #endregion
 
         #endregion 设置地图元素
+        
+        mapHistoryBuffer.Push(MapState());
+        
     }
 
     public void SetUpMap()
@@ -67,11 +67,11 @@ public class Map
             Debug.Log(count);
             var rix = Random.Range(0, _mapHeight);
             var riy = Random.Range(0, _mapWidth);
-            if (_grid2D.GetValue(rix, riy).GetNodeType() == MapNode.NodeType.Empty)
+            if (Grid.GetValue(rix, riy).GetNodeType() == MapNode.NodeType.Empty)
             {
                 count--;
-                _grid2D.GetValue(rix, riy).SetNodeType(MapNode.NodeType.Num2);
-                Debug.Log($"准备中的{rix},{riy} = {_grid2D.GetValue(rix, riy).GetNodeType()}");
+                Grid.GetValue(rix, riy).SetNodeType(MapNode.NodeType.Num2);
+                Debug.Log($"准备中的{rix},{riy} = {Grid.GetValue(rix, riy).GetNodeType()}");
                 Debug.Log("Change");
             }
         }
@@ -84,9 +84,9 @@ public class Map
         {
             var rix = Random.Range(0, _mapHeight);
             var riy = Random.Range(0, _mapWidth);
-            if (_grid2D.GetValue(rix, riy).GetNodeType() == MapNode.NodeType.Empty)
+            if (Grid.GetValue(rix, riy).GetNodeType() == MapNode.NodeType.Empty)
             {
-                _grid2D.GetValue(rix, riy).SetNodeType(MapNode.NodeType.Num2);
+                Grid.GetValue(rix, riy).SetNodeType(MapNode.NodeType.Num2);
                 break;
             }
 
@@ -122,8 +122,8 @@ public class Map
                 var dy = y + movedir.Item2;
                 if (dx >= 0 && dy >= 0 && dx < _mapWidth && dy < _mapHeight)
                 {
-                    var cur = _grid2D.GetValue(x, y);
-                    var next = _grid2D.GetValue(dx, dy);
+                    var cur = Grid.GetValue(x, y);
+                    var next = Grid.GetValue(dx, dy);
                     if (cur.GetNodeType() != EmptyType)
                     {
                         if (cur.GetNodeType() == next.GetNodeType())
@@ -149,7 +149,7 @@ public class Map
         {
             for (int y = 0; y < _mapHeight; y++)
             {
-                if (_grid2D.GetValue(x, y).GetNodeType() == EmptyType)
+                if (Grid.GetValue(x, y).GetNodeType() == EmptyType)
                 {
                     return true;
                 }
@@ -198,7 +198,6 @@ public class Map
             //               2         2,           k     v     y           2
             //               0         1,                       k           0
             //               2         0                                    0
-            StringBuilder str = new StringBuilder();
             for (int y = _mapHeight - 1; y >= 0; y--)
             {
                 for (int k = y; k >= 0; k--)
@@ -215,7 +214,6 @@ public class Map
                     }
                 }
 
-                str.Append($"[{GetNodeType(x, y)}]");
             }
         }
     }
@@ -231,7 +229,6 @@ public class Map
             //               2         2,           
             //               0         1,           k
             //               2         0            y
-            StringBuilder str = new StringBuilder();
             for (int y = 0; y < _mapHeight - 1; y++)
             {
                 if (GetNodeType(x, y) != EmptyType)
@@ -258,7 +255,6 @@ public class Map
             //               2         2,           
             //               0         1,           k
             //               2         0            y
-            StringBuilder str = new StringBuilder();
             for (int y = 0; y < _mapHeight - 1; y++)
             {
                 for (int k = y; k <= _mapHeight - 1; k++)
@@ -275,7 +271,6 @@ public class Map
                     }
                 }
 
-                str.Append($"[{GetNodeType(x, y)}]");
             }
         }
     }
@@ -311,7 +306,6 @@ public class Map
             //point:     x k          point  ->
             //Element:  [2,0,0,2]     move   <-
             //index:    [0,1,2,3]     
-            StringBuilder str = new StringBuilder();
             for (int x = 0; x < _mapWidth - 1; x++)
             {
                 for (int k = x; k <= _mapWidth - 1; k++)
@@ -322,16 +316,11 @@ public class Map
                         SetNodeType(k, y, EmptyType);
                     }
 
-                    if (k == 3)
-                    {
-                        Debug.Log($"最后「{y}」:{GetNodeType(k, y)}");
-                    }
+                
                 }
 
-                str.Append($"[{GetNodeType(x, y)}]");
             }
 
-            Debug.Log(str);
         }
     }
 
@@ -390,6 +379,7 @@ public class Map
         //       CanMove(MoveDirection.Left))) return false;
         if (CanMove(direction))
         {
+            mapHistoryBuffer.Push(MapState());
             switch (direction)
             {
                 case MoveDirection.Up:
@@ -411,7 +401,6 @@ public class Map
                 CreateNewNode();
             }
         }
-
         return true;
     }
 
@@ -419,16 +408,43 @@ public class Map
 
     public MapNode.NodeType[,] MapState()
     {
-        return new MapNode.NodeType[0, 0];
+        var mapstate = new MapNode.NodeType[_mapWidth, _mapHeight];
+        for (int x = 0; x < _mapWidth; x++)
+        {
+            for (int y = 0; y < _mapHeight; y++)
+            {
+               mapstate[x,y]  = GetNodeType(x, y);
+            } 
+        }
+
+        return mapstate;
     }
 
     public MapNode.NodeType GetNodeType(int x, int y)
     {
-        return _grid2D.GetValue(x, y).GetNodeType();
+        return Grid.GetValue(x, y).GetNodeType();
     }
 
     public void SetNodeType(int x, int y, MapNode.NodeType nodeType)
     {
-        _grid2D.GetValue(x, y).SetNodeType(nodeType);
+        Grid.GetValue(x, y).SetNodeType(nodeType);
+    }
+
+    public void Undo()
+    {
+        if (mapHistoryBuffer.Count==0)
+        {
+           return; 
+        }
+       var mapState=  mapHistoryBuffer.Pop();
+       for (int x = 0; x < _mapWidth; x++)
+       {
+           for (int y = 0; y < _mapHeight; y++)
+           {
+                SetNodeType(x,y,mapState[x,y]);    
+                Grid.TriggerGridMapValueChangeEvent(x,y);
+           } 
+       }
+       
     }
 }
