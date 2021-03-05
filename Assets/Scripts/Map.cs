@@ -7,6 +7,11 @@ using Random = UnityEngine.Random;
 // mapindex
 //  [(0,1),(1,1)]   x " -> " ; y " ^ "
 //  [(0,0),(1,0)]
+
+
+//update view 
+//map node change -> node
+//
 public class Map
 {
     private int _mapHeight;
@@ -30,8 +35,9 @@ public class Map
         _mapWidth = mapWidth;
         _mapSize = mapHeight * mapWidth;
         Grid = new Grid2D<MapNode>(mapWidth, mapHeight, 10, new Vector3(-20, -20, 0),
-            (grid2D, x, y) => new MapNode(grid2D, x, y), false);
-        mapHistoryBuffer = new Stack<MapNode.NodeType[,]>(); 
+            (grid2D, x, y) => new MapNode(grid2D, x, y, EmptyType), false);
+        mapHistoryBuffer = new Stack<MapNode.NodeType[,]>();
+
         #region 设置地图元素
 
         //TODO:正常情况取消注释 
@@ -54,9 +60,8 @@ public class Map
         #endregion
 
         #endregion 设置地图元素
-        
+
         mapHistoryBuffer.Push(MapState());
-        
     }
 
     public void SetUpMap()
@@ -213,7 +218,6 @@ public class Map
                         Debug.Log($"最后「{x}」:{GetNodeType(x, k)}");
                     }
                 }
-
             }
         }
     }
@@ -270,7 +274,6 @@ public class Map
                         Debug.Log($"最后「{x}」:{GetNodeType(x, k)}");
                     }
                 }
-
             }
         }
     }
@@ -315,12 +318,8 @@ public class Map
                         SetNodeType(x, y, GetNodeType(k, y));
                         SetNodeType(k, y, EmptyType);
                     }
-
-                
                 }
-
             }
-
         }
     }
 
@@ -401,6 +400,7 @@ public class Map
                 CreateNewNode();
             }
         }
+
         return true;
     }
 
@@ -413,8 +413,8 @@ public class Map
         {
             for (int y = 0; y < _mapHeight; y++)
             {
-               mapstate[x,y]  = GetNodeType(x, y);
-            } 
+                mapstate[x, y] = GetNodeType(x, y);
+            }
         }
 
         return mapstate;
@@ -430,21 +430,39 @@ public class Map
         Grid.GetValue(x, y).SetNodeType(nodeType);
     }
 
+    // public void Swap(int x, int y, int dx, int dy, MapNode node1, MapNode node2)
+    // {
+    //     if (node1.IsMoved == false)
+    //     {
+    //         node1.px = node1.cx;
+    //         node1.cy = node1.cy;
+    //     }
+    //
+    //     Grid.SetValue(x, y, node2);
+    //     Grid.SetValue(dx, dy, node1);
+    // }
+    //
+    // public void Combine(int x, int y, int dx, int dy, MapNode node1, MapNode node2)
+    // {
+    //     Grid.SetValue(x, y, new MapNode(Grid, x, y, node1.GetNodeType() + 1));
+    //     Grid.SetValue(dx, dy, new MapNode(Grid, x, y, EmptyType));
+    // }
+
     public void Undo()
     {
-        if (mapHistoryBuffer.Count==0)
+        if (mapHistoryBuffer.Count == 0)
         {
-           return; 
+            return;
         }
-       var mapState=  mapHistoryBuffer.Pop();
-       for (int x = 0; x < _mapWidth; x++)
-       {
-           for (int y = 0; y < _mapHeight; y++)
-           {
-                SetNodeType(x,y,mapState[x,y]);    
-                Grid.TriggerGridMapValueChangeEvent(x,y);
-           } 
-       }
-       
+
+        var mapState = mapHistoryBuffer.Pop();
+        for (int x = 0; x < _mapWidth; x++)
+        {
+            for (int y = 0; y < _mapHeight; y++)
+            {
+                SetNodeType(x, y, mapState[x, y]);
+                Grid.TriggerGridMapValueChangeEvent(x, y);
+            }
+        }
     }
 }

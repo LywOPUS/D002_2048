@@ -4,9 +4,16 @@ namespace DefaultNamespace
 {
     public class MapNode
     {
-        private int x;
-        private int y;
+        public int px;
+        public int py;
+        public int cx;
+        public int cy;
         private Grid2D<MapNode> _grid2D;
+
+        public bool IsMoved;
+        public bool IsFinalMove;
+        public bool IsNeedMove;
+        public bool IsNeedCombine;
 
         public enum NodeType
         {
@@ -25,18 +32,23 @@ namespace DefaultNamespace
 
         private NodeType _nodeType;
 
-        public MapNode(Grid2D<MapNode> grid2D, int x, int y)
+        public MapNode(Grid2D<MapNode> grid2D, int x, int y,NodeType type)
         {
-            this.x = x;
-            this.y = y;
+            IsMoved = false;
+            IsFinalMove = false;
+            IsNeedCombine = false;
+            IsNeedMove = false;
+            cx = px = x;
+            cy = py = y;
             _grid2D = grid2D;
-            _nodeType = NodeType.Empty;
+            _nodeType = type;
         }
+        
 
         public void SetNodeType(NodeType type)
         {
             _nodeType = type;
-            _grid2D.TriggerGridMapValueChangeEvent(x, y);
+            _grid2D.TriggerGridMapValueChangeEvent(cx, cy);
         }
 
         public NodeType GetNodeType()
@@ -48,6 +60,7 @@ namespace DefaultNamespace
         {
             _nodeType = NodeType.Empty;
         }
+
         public override string ToString()
         {
             return _nodeType.ToString();

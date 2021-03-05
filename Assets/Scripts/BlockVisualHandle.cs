@@ -1,16 +1,19 @@
-using System.Collections.Generic;
 using AlderaminUtils;
 using DefaultNamespace;
-using TMPro;
-using UnityEngine;
 using DG.Tweening;
+using TMPro;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Serialization;
+
 public class BlockVisualHandle : MonoBehaviour
 {
-    public Transform BlockVisualNode;
-    public Grid2D<MapNode> _grid;
-    public List<Transform> visualNodeList;
-    public Transform[,] visualNodeArray;
-    public List<TextMeshPro> TextColor;
+    [FormerlySerializedAs("BlockVisualNode")]
+    public Transform blockVisualNode;
+
+    [FormerlySerializedAs("_grid")] public Grid2D<MapNode> grid;
+    private Transform[,] VisualNodeArray;
+
 
     void OnGridMapValueChangeHandle(object sender, Grid2D<MapNode>.GridChangeEventArgs eventArgs)
     {
@@ -19,32 +22,36 @@ public class BlockVisualHandle : MonoBehaviour
 
     public void Setup(Grid2D<MapNode> grid)
     {
-        _grid = grid;
-        visualNodeArray = new Transform[_grid.GetWidth(), _grid.GetHeight()];
-        for (int x = 0; x < _grid.GetWidth(); x++)
+        this.grid = grid;
+        VisualNodeArray = new Transform[this.grid.GetWidth(), this.grid.GetHeight()];
+        for (int x = 0; x < this.grid.GetWidth(); x++)
         {
-            for (int y = 0; y < _grid.GetHeight(); y++)
+            for (int y = 0; y < this.grid.GetHeight(); y++)
             {
-                var v = Instantiate(BlockVisualNode, _grid.Cell2WorldPos(x, y), Quaternion.identity);
-                Debug.Log(v.position);
-                visualNodeList.Add(v);
-                visualNodeArray[x, y] = v;
+                //TODO: change BlockVisualNode Create mode
+                var vBlock = OnCreateNewBlock(x, y);
             }
         }
 
-        UpdateVisual(_grid);
-        _grid.OnGridMapValueChangeEvent += OnGridMapValueChangeHandle;
+        this.grid.OnGridMapValueChangeEvent += OnGridMapValueChangeHandle;
         Debug.Log("setupVisualNode COMPLETE");
     }
 
+
     void SetupVisualNode(int x, int y)
     {
-        var vNode = visualNodeArray[x, y];
-        var node = _grid.GetValue(x, y);
+        var vNode = VisualNodeArray[x, y];
+        var node = grid.GetValue(x, y);
+        var vNodeBackGround = vNode.GetChild(0);
         var vNodeText = vNode.GetChild(1).GetComponent<TextMeshPro>();
+        if (node.GetNodeType() != MapNode.NodeType.Empty)
+        {
+            vNodeBackGround.gameObject.SetActive(true);
+        }
         switch (node.GetNodeType())
         {
             case MapNode.NodeType.Empty:
+                vNodeBackGround.gameObject.SetActive(false);
                 vNodeText.text = " ";
                 break;
             case MapNode.NodeType.Num2:
@@ -80,14 +87,21 @@ public class BlockVisualHandle : MonoBehaviour
         }
     }
 
-    void UpdateVisual(Grid2D<MapNode> grid2D)
+
+    Transform OnCreateNewBlock(int x, int y)
     {
-        for (int x = 0; x < grid2D.GetWidth(); x++)
-        {
-            for (int y = 0; y < grid2D.GetHeight(); y++)
-            {
-                SetupVisualNode(x, y);
-            }
-        }
+        //TODO: 需要一个对象池或者工厂？
+        // if (VisualNodeArray[x, y].transform != null)
+        // {
+        // Destroy(VisualNodeArray[x, y].transform);
+        // }
+
+        var blcok = Instantiate(blockVisualNode, grid.Cell2WorldPos(x, y), quaternion.identity);
+
+        VisualNodeArray[x, y] = blcok;
+        blcok.DOScale(new Vector3(5, 5), 1f)
+            .From();
+        SetupVisualNode(x, y);
+        return blcok;
     }
 }
