@@ -12,42 +12,39 @@ public class BlockVisualHandle : MonoBehaviour
     public Transform blockVisualNode;
 
     [FormerlySerializedAs("_grid")] public Grid2D<MapNode> grid;
+    private Map map;
     private Transform[,] VisualNodeArray;
 
 
-    void OnGridMapValueChangeHandle(object sender, Grid2D<MapNode>.GridChangeEventArgs eventArgs)
+    private void OnGridMapValueChangeHandle(object sender, Grid2D<MapNode>.GridChangeEventArgs eventArgs)
     {
         SetupVisualNode(eventArgs.x, eventArgs.y);
     }
 
-    public void Setup(Grid2D<MapNode> grid)
+    public void Setup(Map map)
     {
-        this.grid = grid;
-        VisualNodeArray = new Transform[this.grid.GetWidth(), this.grid.GetHeight()];
-        for (int x = 0; x < this.grid.GetWidth(); x++)
+        this.map = map;
+        grid = map.Grid;
+        VisualNodeArray = new Transform[grid.GetWidth(), grid.GetHeight()];
+        for (var x = 0; x < grid.GetWidth(); x++)
+        for (var y = 0; y < grid.GetHeight(); y++)
         {
-            for (int y = 0; y < this.grid.GetHeight(); y++)
-            {
-                //TODO: change BlockVisualNode Create mode
-                var vBlock = OnCreateNewBlock(x, y);
-            }
+            var vBlock = OnCreateNewBlock(x, y);
         }
 
-        this.grid.OnGridMapValueChangeEvent += OnGridMapValueChangeHandle;
+        grid.OnGridMapValueChangeEvent += OnGridMapValueChangeHandle;
         Debug.Log("setupVisualNode COMPLETE");
     }
 
 
-    void SetupVisualNode(int x, int y)
+    private void SetupVisualNode(int x, int y)
     {
         var vNode = VisualNodeArray[x, y];
         var node = grid.GetValue(x, y);
         var vNodeBackGround = vNode.GetChild(0);
         var vNodeText = vNode.GetChild(1).GetComponent<TextMeshPro>();
-        if (node.GetNodeType() != MapNode.NodeType.Empty)
-        {
-            vNodeBackGround.gameObject.SetActive(true);
-        }
+        if (node.GetNodeType() != MapNode.NodeType.Empty) vNodeBackGround.gameObject.SetActive(true);
+
         switch (node.GetNodeType())
         {
             case MapNode.NodeType.Empty:
@@ -88,14 +85,9 @@ public class BlockVisualHandle : MonoBehaviour
     }
 
 
-    Transform OnCreateNewBlock(int x, int y)
+    private Transform OnCreateNewBlock(int x, int y)
     {
         //TODO: 需要一个对象池或者工厂？
-        // if (VisualNodeArray[x, y].transform != null)
-        // {
-        // Destroy(VisualNodeArray[x, y].transform);
-        // }
-
         var blcok = Instantiate(blockVisualNode, grid.Cell2WorldPos(x, y), quaternion.identity);
 
         VisualNodeArray[x, y] = blcok;

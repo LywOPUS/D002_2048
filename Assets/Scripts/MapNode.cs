@@ -4,17 +4,6 @@ namespace DefaultNamespace
 {
     public class MapNode
     {
-        public int px;
-        public int py;
-        public int cx;
-        public int cy;
-        private Grid2D<MapNode> _grid2D;
-
-        public bool IsMoved;
-        public bool IsFinalMove;
-        public bool IsNeedMove;
-        public bool IsNeedCombine;
-
         public enum NodeType
         {
             Empty,
@@ -30,9 +19,20 @@ namespace DefaultNamespace
             Num2048
         }
 
-        private NodeType _nodeType;
+        private readonly Grid2D<MapNode> _grid2D;
 
-        public MapNode(Grid2D<MapNode> grid2D, int x, int y,NodeType type)
+        private NodeType _nodeType;
+        public int cx;
+        public int cy;
+        public bool IsFinalMove;
+
+        public bool IsMoved;
+        public bool IsNeedCombine;
+        public bool IsNeedMove;
+        public int px;
+        public int py;
+
+        public MapNode(Grid2D<MapNode> grid2D, int x, int y, NodeType type)
         {
             IsMoved = false;
             IsFinalMove = false;
@@ -43,12 +43,12 @@ namespace DefaultNamespace
             _grid2D = grid2D;
             _nodeType = type;
         }
-        
+
 
         public void SetNodeType(NodeType type)
         {
             _nodeType = type;
-            _grid2D.TriggerGridMapValueChangeEvent(cx, cy);
+            // _grid2D.TriggerGridMapValueChangeEvent(cx, cy);
         }
 
         public NodeType GetNodeType()
@@ -56,9 +56,27 @@ namespace DefaultNamespace
             return _nodeType;
         }
 
+
+        public void Move(int tx, int ty)
+        {
+            px = cx;
+            py = cy;
+            cx = tx;
+            cy = ty;
+            //移动mapnode在Grid中的位置
+            _grid2D.SetValue(tx, ty, this);
+        }
+
         public void RestNode()
         {
             _nodeType = NodeType.Empty;
+        }
+
+        public bool UpNode()
+        {
+            _nodeType += 1;
+            _grid2D.SetValue(cx, cy, this);
+            return _nodeType == NodeType.Num2048;
         }
 
         public override string ToString()

@@ -1,16 +1,8 @@
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class GamePlayHandler : MonoBehaviour
 {
-    public Map Map;
-
-    public bool IsRightMove() => Input.GetKeyDown(KeyCode.D);
-    public bool IsLeftMove() => Input.GetKeyDown(KeyCode.A);
-    public bool IsUpMove() => Input.GetKeyDown(KeyCode.W);
-    public bool IsDownMove() => Input.GetKeyDown(KeyCode.S);
-
     public enum GAMESTATE
     {
         MainMenu,
@@ -21,6 +13,7 @@ public class GamePlayHandler : MonoBehaviour
     [SerializeField] private GAMESTATE gamestate;
 
     private BlockVisualHandle BlockVisualHandle;
+    public Map Map;
 
 
     private void Awake()
@@ -41,9 +34,10 @@ public class GamePlayHandler : MonoBehaviour
             case GAMESTATE.MainMenu:
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
-                    BlockVisualHandle.Setup(Map.Grid);
+                    BlockVisualHandle.Setup(Map);
                     gamestate = GAMESTATE.Play;
                 }
+
                 break;
             case GAMESTATE.Play:
                 InputProcees();
@@ -55,31 +49,36 @@ public class GamePlayHandler : MonoBehaviour
         }
     }
 
+    public bool IsRightMove()
+    {
+        return Input.GetKeyDown(KeyCode.D);
+    }
+
+    public bool IsLeftMove()
+    {
+        return Input.GetKeyDown(KeyCode.A);
+    }
+
+    public bool IsUpMove()
+    {
+        return Input.GetKeyDown(KeyCode.W);
+    }
+
+    public bool IsDownMove()
+    {
+        return Input.GetKeyDown(KeyCode.S);
+    }
+
     private void InputProcees()
     {
-        if (IsRightMove())
-        {
-            Map.Move(Map.MoveDirection.Right);
-        }
+        if (IsRightMove()) Map.Move(Map.MoveDirection.Right);
 
-        if (IsLeftMove())
-        {
-            Map.Move(Map.MoveDirection.Left);
-        }
+        if (IsLeftMove()) Map.Move(Map.MoveDirection.Left);
 
-        if (IsUpMove())
-        {
-            Map.Move(Map.MoveDirection.Up);
-        }
+        if (IsUpMove()) Map.Move(Map.MoveDirection.Up);
 
-        if (IsDownMove())
-        {
-            Map.Move(Map.MoveDirection.Down);
-        }
+        if (IsDownMove()) Map.Move(Map.MoveDirection.Down);
 
-        if (Input.GetKeyDown(KeyCode.Z))
-        {
-            Map.Undo();
-        }
+        if (Input.GetKeyDown(KeyCode.Z)) Map.Undo();
     }
 }
